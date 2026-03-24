@@ -1,0 +1,36 @@
+# Job search provider: "adzuna" or "jsearch" (RapidAPI)
+provider: adzuna
+
+adzuna:
+  # ISO country code used in the API path (gb, us, de, ...)
+  country: us
+  # Optional location filter, e.g. "san francisco" or leave empty for nationwide
+  where: ""
+  results_per_page: 20
+  max_pages_per_query: 2
+
+jsearch:
+  # Passed as country filter when supported; main filter is the query string
+  country: us
+  location: ""
+  num_pages: 1
+
+# Each string is searched separately; results are merged and deduplicated
+queries:
+  - "AI engineer"
+  - "machine learning engineer"
+  - "ML engineer"
+  - "MLOps engineer"
+  - "LLM engineer"
+  - "junior machine learning"
+  - "entry level AI"
+  - "new grad machine learning"
+  - "graduate AI engineer"
+  - "ML intern"
+
+retention:
+  max_rows: 5000
+
+excel:
+  path: data/jobs.xlsx
+  sheet: jobs

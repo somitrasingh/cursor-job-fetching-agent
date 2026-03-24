@@ -1,0 +1,70 @@
+name: Daily AI/ML job fetch
+
+on:
+  schedule:
+    # 08:00 UTC daily — adjust for your timezone
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      commit_excel:
+        description: "Commit updated data/jobs.xlsx to the repository"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Set COMMIT_EXCEL
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "COMMIT_EXCEL=${{ inputs.commit_excel }}" >> "$GITHUB_ENV"
+          else
+            echo "COMMIT_EXCEL=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Fetch jobs
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        run: python -m src.fetch_jobs
+
+      - name: Upload Excel artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobs-xlsx
+          path: data/jobs.xlsx
+          if-no-files-found: warn
+
+      - name: Commit and push Excel
+        if: env.COMMIT_EXCEL == 'true' && success()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/jobs.xlsx
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update jobs.xlsx [skip ci]"
+            git push
+          fi
