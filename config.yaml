@@ -1,21 +1,38 @@
 # Job search provider: "adzuna" or "jsearch" (RapidAPI)
 provider: adzuna
 
+# Only keep listings whose posted_at is within this many hours of run time (UTC).
+filters:
+  max_age_hours: 48
+  # If true, drop listings with missing/unparseable posted_at
+  exclude_if_no_posted_at: true
+
+# Resume for LLM: RESUME_TEXT env (CI), then non-empty data/resume.txt, else pdf_path PDF.
+resume:
+  path: data/resume.txt
+  pdf_path: data/resume.pdf
+
+llm:
+  enabled: true
+  provider: openai
+  model: gpt-4o-mini
+  max_description_chars: 12000
+  max_jobs_per_run: 40
+  request_delay_seconds: 0.4
+  # Stored in Excel; full description can be huge
+  description_snippet_max_chars: 3000
+
 adzuna:
-  # ISO country code used in the API path (gb, us, de, ...)
   country: us
-  # Optional location filter, e.g. "san francisco" or leave empty for nationwide
   where: ""
   results_per_page: 20
   max_pages_per_query: 2
 
 jsearch:
-  # Passed as country filter when supported; main filter is the query string
   country: us
   location: ""
   num_pages: 1
 
-# Each string is searched separately; results are merged and deduplicated
 queries:
   - "AI engineer"
   - "machine learning engineer"

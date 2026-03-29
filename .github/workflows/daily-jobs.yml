@@ -11,6 +11,10 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: daily-job-fetch-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -31,6 +35,27 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Write resume from secret (optional; overrides committed file)
+        env:
+          RESUME_TEXT: ${{ secrets.RESUME_TEXT }}
+        run: |
+          python << 'PY'
+          import os
+          from pathlib import Path
+          t = (os.environ.get("RESUME_TEXT") or "").strip()
+          if t:
+              Path("data").mkdir(parents=True, exist_ok=True)
+              Path("data/resume.txt").write_text(t, encoding="utf-8")
+          PY
+
+      - name: Validate secrets and resume
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python -m src.workflow_validate
+
       - name: Set COMMIT_EXCEL
         shell: bash
         run: |
@@ -40,11 +65,12 @@ jobs:
             echo "COMMIT_EXCEL=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Fetch jobs
+      - name: Fetch jobs and enrich
         env:
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python -m src.fetch_jobs
 
       - name: Upload Excel artifact

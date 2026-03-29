@@ -5,3 +5,6 @@ __pycache__/
 .Python
 .env
 ~$*.xlsx
+# Binary resume backup (optional); use data/resume.txt for the pipeline (safe to commit on a private repo)
+data/resume.pdf
+data/_raw_snip.txt
